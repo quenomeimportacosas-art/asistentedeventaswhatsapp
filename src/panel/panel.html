@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sales Copilot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="panel.css" />
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-left">
+      <div class="logo">
+        <span class="logo-icon">◈</span>
+        <span class="logo-text">Sales Copilot</span>
+      </div>
+      <div class="chat-indicator" id="chatIndicator">
+        <span class="dot"></span>
+        <span id="chatName">Esperando chat...</span>
+      </div>
+    </div>
+    <button class="config-btn" id="configBtn" title="Configuración">⚙</button>
+  </header>
+
+  <!-- VISTAS -->
+  <div id="viewMain" class="view active">
+
+    <!-- TERMÓMETRO DE VENTA -->
+    <section class="thermo-section" id="thermoSection" style="display:none">
+      <div class="thermo-header">
+        <span class="section-label">TEMPERATURA DE VENTA</span>
+        <span class="thermo-badge" id="thermoBadge">—</span>
+      </div>
+      <div class="thermo-track">
+        <div class="thermo-fill" id="thermoFill" style="width:0%"></div>
+        <div class="thermo-cursor" id="thermoCursor" style="left:0%"></div>
+      </div>
+      <div class="thermo-labels">
+        <span>Frío</span><span>Tibio</span><span>Caliente</span><span>Cerrar ya 🔥</span>
+      </div>
+      <p class="thermo-reason" id="thermoReason"></p>
+    </section>
+
+    <!-- MOMENTO DETECTADO -->
+    <div class="moment-tag-row" id="momentRow" style="display:none">
+      <span class="section-label">MOMENTO</span>
+      <span class="moment-tag" id="momentTag">—</span>
+    </div>
+
+    <!-- SUGERENCIA PRINCIPAL -->
+    <section class="suggestion-section" id="suggestionSection" style="display:none">
+      <div class="suggestion-header">
+        <span class="section-label">SUGERENCIA</span>
+        <div class="suggestion-actions">
+          <button class="btn-icon" id="copyBtn" title="Copiar texto">⎘ Copiar</button>
+        </div>
+      </div>
+      <div class="suggestion-text" id="suggestionText"></div>
+      <div class="suggestion-meta">
+        <div class="meta-row">
+          <span class="meta-label">Táctica</span>
+          <span class="meta-value" id="tacticValue">—</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">Objetivo</span>
+          <span class="meta-value" id="goalValue">—</span>
+        </div>
+        <div class="meta-row meta-reasoning">
+          <span class="meta-label">Por qué</span>
+          <span class="meta-value" id="reasoningValue">—</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- VARIANTES DE TONO -->
+    <div class="tone-row" id="toneRow" style="display:none">
+      <span class="section-label">OTRA VARIANTE</span>
+      <div class="tone-btns" id="toneBtns"></div>
+    </div>
+
+    <!-- ESTADO VACÍO / INICIAL -->
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">◈</div>
+      <p class="empty-title">Listo para analizar</p>
+      <p class="empty-sub">Abrí un chat en WhatsApp Web y<br>presioná <strong>Analizar conversación</strong></p>
+    </div>
+
+    <!-- ERROR -->
+    <div class="error-state" id="errorState" style="display:none">
+      <p class="error-text" id="errorText">Ocurrió un error.</p>
+    </div>
+
+    <!-- LOADING -->
+    <div class="loading-state" id="loadingState" style="display:none">
+      <div class="loading-dots">
+        <span></span><span></span><span></span>
+      </div>
+      <p class="loading-text" id="loadingText">Analizando conversación...</p>
+    </div>
+
+  </div>
+
+  <!-- VISTA CONFIG -->
+  <div id="viewConfig" class="view">
+    <div class="config-header">
+      <button class="back-btn" id="backBtn">← Volver</button>
+      <span class="config-title">Configuración</span>
+    </div>
+
+    <div class="config-sections">
+
+      <!-- API Keys -->
+      <div class="config-group">
+        <h3 class="config-group-title">🔑 API Keys</h3>
+        <div class="field">
+          <label>Grok API Key (principal)</label>
+          <input type="password" id="grokKey" placeholder="xai-..." autocomplete="off" />
+          <span class="field-hint">Gratis en console.x.ai</span>
+        </div>
+        <div class="field">
+          <label>OpenRouter API Key (backup)</label>
+          <input type="password" id="openRouterKey" placeholder="sk-or-..." autocomplete="off" />
+          <span class="field-hint">Fallback automático cuando Grok falla</span>
+        </div>
+      </div>
+
+      <!-- Perfil del negocio -->
+      <div class="config-group">
+        <h3 class="config-group-title">🏪 Perfil del negocio</h3>
+        <div class="field">
+          <label>Nombre del negocio</label>
+          <input type="text" id="bizName" placeholder="Ej: Tienda Moda BA" />
+        </div>
+        <div class="field">
+          <label>Qué vendés</label>
+          <textarea id="bizProducts" rows="3" placeholder="Ej: Ropa femenina casual y sport, talles S al XXL. Precio promedio $15.000-$45.000"></textarea>
+        </div>
+        <div class="field">
+          <label>Rango de precios</label>
+          <input type="text" id="bizPriceRange" placeholder="Ej: $8.000 - $50.000" />
+        </div>
+        <div class="field">
+          <label>Tiempo de entrega</label>
+          <input type="text" id="bizDelivery" placeholder="Ej: 48-72hs CABA, 5-7 días interior" />
+        </div>
+        <div class="field">
+          <label>Política de devoluciones</label>
+          <input type="text" id="bizReturns" placeholder="Ej: 30 días cambio, no devolución de dinero" />
+        </div>
+        <div class="field">
+          <label>Tono de la marca</label>
+          <select id="bizTone">
+            <option value="profesional y amigable">Profesional y amigable</option>
+            <option value="casual y cercano">Casual y cercano</option>
+            <option value="formal y serio">Formal y serio</option>
+            <option value="divertido y joven">Divertido y joven</option>
+            <option value="lujoso y exclusivo">Lujoso y exclusivo</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Objeciones frecuentes + cómo las manejás</label>
+          <textarea id="bizObjections" rows="5" placeholder="Ej:&#10;- 'Está caro' → Explicar calidad + cuotas disponibles&#10;- 'No sé si me va a quedar' → Ofrecer guía de talles + cambio gratis&#10;- 'Lo pienso' → Urgencia suave (stock limitado)"></textarea>
+        </div>
+      </div>
+
+      <button class="save-btn" id="saveBtn">Guardar configuración</button>
+      <p class="save-status" id="saveStatus"></p>
+
+    </div>
+  </div>
+
+  <!-- FOOTER — BOTONES DE ACCIÓN -->
+  <footer class="footer" id="mainFooter">
+    <button class="btn-analyze" id="analyzeBtn">
+      <span class="btn-icon-analyze">◈</span>
+      Analizar conversación
+    </button>
+    <button class="btn-closed" id="closedBtn" title="Marcar venta como cerrada">
+      ✓ Venta cerrada
+    </button>
+  </footer>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <script src="panel.js"></script>
+</body>
+</html>
