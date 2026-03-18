@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Sales Copilot — Asistente de Ventas WhatsApp",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Copiloto de ventas para WhatsApp Web. Analiza conversaciones y sugiere la mejor respuesta para cerrar más ventas.",
   "permissions": [
     "sidePanel",
@@ -19,8 +19,12 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://web.whatsapp.com/*"],
-      "js": ["src/content/content.js"],
+      "matches": [
+        "https://web.whatsapp.com/*"
+      ],
+      "js": [
+        "src/content/content.js"
+      ],
       "run_at": "document_idle"
     }
   ],
