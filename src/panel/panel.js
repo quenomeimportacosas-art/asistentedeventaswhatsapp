@@ -70,12 +70,12 @@
 
   async function loadConfig() {
     const data = await chrome.storage.local.get([
-      "grokApiKey", "openRouterApiKey",
+      "groqApiKey", "openRouterApiKey",
       "bizName", "bizProducts", "bizPriceRange",
       "bizDelivery", "bizReturns", "bizTone", "bizObjections"
     ]);
 
-    if (data.grokApiKey)      $("grokKey").value       = data.grokApiKey;
+    if (data.groqApiKey)      $("groqKey").value       = data.groqApiKey;
     if (data.openRouterApiKey) $("openRouterKey").value = data.openRouterApiKey;
     if (data.bizName)         $("bizName").value        = data.bizName;
     if (data.bizProducts)     $("bizProducts").value    = data.bizProducts;
@@ -88,7 +88,7 @@
 
   async function saveConfig() {
     const config = {
-      grokApiKey:       $("grokKey").value.trim(),
+      groqApiKey:       $("groqKey").value.trim(),
       openRouterApiKey: $("openRouterKey").value.trim(),
       bizName:          $("bizName").value.trim(),
       bizProducts:      $("bizProducts").value.trim(),
@@ -147,8 +147,8 @@
     if (isLoading) return;
 
     // Verificar que hay API key configurada
-    const stored = await chrome.storage.local.get(["grokApiKey", "openRouterApiKey"]);
-    if (!stored.grokApiKey && !stored.openRouterApiKey) {
+    const stored = await chrome.storage.local.get(["groqApiKey", "openRouterApiKey"]);
+    if (!stored.groqApiKey && !stored.openRouterApiKey) {
       showError("⚠ Necesitás configurar al menos una API key. Tocá ⚙ para configurar.");
       return;
     }

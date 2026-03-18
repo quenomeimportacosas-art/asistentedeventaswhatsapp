@@ -44,8 +44,8 @@ git clone https://github.com/quenomeimportacosas-art/asistentedeventaswhatsapp.g
 
 ### API Keys (gratis)
 
-**Grok (recomendado — gratis):**
-1. Andá a [console.x.ai](https://console.x.ai)
+**Groq (recomendado — gratis):**
+1. Andá a [console.groq.com](https://console.groq.com)
 2. Creá una cuenta
 3. Generá una API key
 4. Pegala en el campo **Grok API Key** en ⚙ Configuración
@@ -110,7 +110,7 @@ asistentedeventaswhatsapp/
 
 | API | Modelo | Costo | Uso |
 |-----|--------|-------|-----|
-| Grok (xAI) | grok-beta | Gratis (con límites) | Principal |
+| Groq (groq.com) | llama3-70b-8192 | Gratis (con límites) | Principal |
 | OpenRouter | mistral-7b-instruct | Gratis | Backup automático |
 
 ---

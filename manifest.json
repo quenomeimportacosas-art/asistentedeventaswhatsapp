@@ -11,7 +11,7 @@
   ],
   "host_permissions": [
     "https://web.whatsapp.com/*",
-    "https://api.x.ai/*",
+    "https://api.groq.com/*",
     "https://openrouter.ai/*"
   ],
   "background": {
