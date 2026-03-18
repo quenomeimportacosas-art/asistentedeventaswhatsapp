@@ -1,0 +1,2 @@
+[El archivo completo del prompt v2.0 está integrado directamente en src/background/background.js]
+Ver: src/background/background.js → función buildPrompt()
