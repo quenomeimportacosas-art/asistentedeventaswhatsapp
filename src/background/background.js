@@ -1,5 +1,5 @@
 // Sales Copilot — Background Service Worker
-// Groq (principal) → OpenRouter Llama 4 Maverick (fallback 1) → OpenRouter Mistral Small (fallback 2)
+// Modelos actualizados al 18/03/2026
 
 chrome.action.onClicked.addListener((tab) => {
   if (tab.url && tab.url.includes("web.whatsapp.com")) {
@@ -37,70 +37,74 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 // ============================================================
-// MOTOR IA — Groq → OpenRouter (múltiples modelos gratuitos)
+// CADENA DE MODELOS — ordenados por calidad/disponibilidad
+// Groq (gratis, rapidísimo) → OpenRouter (fallback gratuito)
 // ============================================================
+
+const GROQ_MODELS = [
+  "llama-3.3-70b-versatile",   // Principal — reemplaza al deprecated llama3-70b-8192
+  "llama-3.1-8b-instant",      // Backup Groq — más liviano pero muy rápido
+];
+
+const OPENROUTER_MODELS = [
+  "meta-llama/llama-3.3-70b-instruct:free",
+  "mistralai/mistral-small-3.1-24b-instruct:free",
+  "google/gemma-3-27b-it:free",
+];
 
 async function handleAnalysis({ conversation, businessProfile, previousPatterns }) {
   const config = await chrome.storage.local.get(["groqApiKey", "openRouterApiKey"]);
   const prompt = buildPrompt(conversation, businessProfile, previousPatterns);
   const errors = [];
 
-  // 1. Intentar con Groq (llama3-70b-8192 — rápido y gratis)
+  // 1. Intentar con todos los modelos de Groq
   if (config.groqApiKey) {
-    try {
-      console.log("[Sales Copilot] Intentando con Groq llama3-70b...");
-      return await callGroq(prompt, config.groqApiKey);
-    } catch (err) {
-      console.warn("[Sales Copilot] Groq falló:", err.message);
-      errors.push(`Groq: ${err.message}`);
+    for (const model of GROQ_MODELS) {
+      try {
+        console.log(`[Sales Copilot] Groq → ${model}`);
+        return await callGroq(prompt, config.groqApiKey, model);
+      } catch (err) {
+        console.warn(`[Sales Copilot] Groq/${model} falló:`, err.message);
+        errors.push(`Groq/${model}: ${err.message.slice(0, 80)}`);
+        // Si es rate limit (429), seguir intentando con el siguiente
+        // Si es error de auth (401), no tiene sentido seguir con Groq
+        if (err.message.includes("401") || err.message.includes("Invalid API Key")) break;
+      }
     }
   }
 
-  // 2. Fallback: OpenRouter — Llama 4 Maverick (gratis, muy bueno)
+  // 2. Intentar con todos los modelos de OpenRouter
   if (config.openRouterApiKey) {
-    try {
-      console.log("[Sales Copilot] Intentando con OpenRouter llama-4-maverick...");
-      return await callOpenRouter(prompt, config.openRouterApiKey, "meta-llama/llama-4-maverick:free");
-    } catch (err) {
-      console.warn("[Sales Copilot] llama-4-maverick falló:", err.message);
-      errors.push(`Llama-4-Maverick: ${err.message}`);
-    }
-
-    // 3. Fallback 2: Llama 3.3 70B (también gratis y muy capaz)
-    try {
-      console.log("[Sales Copilot] Intentando con OpenRouter llama-3.3-70b...");
-      return await callOpenRouter(prompt, config.openRouterApiKey, "meta-llama/llama-3.3-70b-instruct:free");
-    } catch (err) {
-      console.warn("[Sales Copilot] llama-3.3-70b falló:", err.message);
-      errors.push(`Llama-3.3-70B: ${err.message}`);
-    }
-
-    // 4. Fallback 3: Mistral Small 3.1 (gratis, liviano)
-    try {
-      console.log("[Sales Copilot] Intentando con OpenRouter mistral-small-3.1...");
-      return await callOpenRouter(prompt, config.openRouterApiKey, "mistralai/mistral-small-3.1-24b-instruct:free");
-    } catch (err) {
-      console.warn("[Sales Copilot] mistral-small falló:", err.message);
-      errors.push(`Mistral-Small: ${err.message}`);
+    for (const model of OPENROUTER_MODELS) {
+      try {
+        console.log(`[Sales Copilot] OpenRouter → ${model}`);
+        return await callOpenRouter(prompt, config.openRouterApiKey, model);
+      } catch (err) {
+        console.warn(`[Sales Copilot] OpenRouter/${model} falló:`, err.message);
+        errors.push(`OpenRouter/${model}: ${err.message.slice(0, 80)}`);
+        if (err.message.includes("401") || err.message.includes("Invalid API Key")) break;
+      }
     }
   }
 
   if (!config.groqApiKey && !config.openRouterApiKey) {
-    throw new Error("No hay APIs configuradas. Tocá ⚙ para configurar tus API keys.");
+    throw new Error("No hay APIs configuradas. Tocá ⚙ para agregar tus API keys.");
   }
 
-  throw new Error(`Todos los modelos fallaron. Intentá de nuevo en unos segundos.\n${errors.join('\n')}`);
+  throw new Error("Todos los modelos están temporalmente ocupados. Esperá unos segundos e intentá de nuevo.");
 }
 
 // ============================================================
-// PROMPT BUILDER
+// PROMPT
 // ============================================================
 
 function buildPrompt(conversation, businessProfile, previousPatterns) {
   const patternsSection = previousPatterns && previousPatterns.length > 0
-    ? `\n\n## PATRONES APRENDIDOS DE ESTE NEGOCIO\n${previousPatterns.map((p, i) =>
-        `${i + 1}. Situación: "${p.context}" → Táctica: "${p.tactic}" → Resultado: ${p.outcome === 'closed' ? '✅ Venta cerrada' : p.outcome === 'improved' ? '📈 Mejoró' : '📉 No mejoró'}`
-      ).join('\n')}`
+    ? `\n\n## PATRONES APRENDIDOS\n${previousPatterns.map((p, i) =>
+        `${i+1}. Situación: "${p.context}" → Táctica: "${p.tactic}" → Resultado: ${
+          p.outcome === 'closed' ? '✅ Venta cerrada' :
+          p.outcome === 'improved' ? '📈 Mejoró' : '📉 No mejoró'
+        }`).join('\n')}`
     : '';
 
   return `Eres un experto en ventas para e-commerce con 15 años de experiencia. Analizá esta conversación de WhatsApp y dá la MEJOR sugerencia de respuesta para avanzar la venta.
@@ -139,10 +143,10 @@ Respondé ÚNICAMENTE con JSON válido. Sin markdown, sin texto antes o después
 }
 
 // ============================================================
-// GROQ (groq.com — Llama 3 70B, gratis y ultra rápido)
+// GROQ — api.groq.com (gratis, ultra rápido)
 // ============================================================
 
-async function callGroq(prompt, apiKey) {
+async function callGroq(prompt, apiKey, model) {
   const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -150,7 +154,7 @@ async function callGroq(prompt, apiKey) {
       "Authorization": `Bearer ${apiKey}`
     },
     body: JSON.stringify({
-      model: "llama3-70b-8192",
+      model,
       messages: [{ role: "user", content: prompt }],
       temperature: 0.7,
       max_tokens: 1000
@@ -163,11 +167,11 @@ async function callGroq(prompt, apiKey) {
   }
 
   const data = await response.json();
-  return parseAIResponse(data.choices[0].message.content.trim(), "groq/llama3-70b");
+  return parseAIResponse(data.choices[0].message.content.trim(), `groq/${model}`);
 }
 
 // ============================================================
-// OPENROUTER (fallback — múltiples modelos gratuitos)
+// OPENROUTER — fallback gratuito
 // ============================================================
 
 async function callOpenRouter(prompt, apiKey, model) {
@@ -200,14 +204,12 @@ async function callOpenRouter(prompt, apiKey, model) {
 }
 
 // ============================================================
-// PARSER
+// PARSER — robusto contra markdown y texto extra
 // ============================================================
 
 function parseAIResponse(text, source) {
   try {
-    // Limpiar markdown si el modelo lo ignoró
     let clean = text.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
-    // Extraer JSON si hay texto antes/después
     const jsonMatch = clean.match(/\{[\s\S]*\}/);
     if (jsonMatch) clean = jsonMatch[0];
     const parsed = JSON.parse(clean);
